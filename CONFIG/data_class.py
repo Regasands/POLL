@@ -4,21 +4,20 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 class CallBackMarkup:
     def __init__(self, dicters: dict, row: int, additional_data='callback_data'):
         self.sp, cash_sp, index_ = [], [], 0
+
         self.dictr = dicters
         for key, values in dicters.items():
             if index_ == row:
                 self.sp.append(cash_sp[:])
                 cash_sp = []
                 index_ = 0
-            else:
-                if additional_data == 'callback_data':
-                    cash_sp.append(InlineKeyboardButton(text=str(key), callback_data=str(values)))
-                elif additional_data == 'url':
-                    cash_sp.append(InlineKeyboardButton(text=str(key), url=str(values)))
+            if additional_data == 'callback_data':
+                cash_sp.append(InlineKeyboardButton(text=str(key), callback_data=str(values)))
+            elif additional_data == 'url':
+                cash_sp.append(InlineKeyboardButton(text=str(key), url=str(values)))
             index_ += 1
         else:
             self.sp.append(cash_sp[:])
-
         self.markup = InlineKeyboardMarkup(inline_keyboard=self.sp)
 
     async def get_markup(self):

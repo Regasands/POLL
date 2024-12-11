@@ -32,8 +32,8 @@ def create_table(con, cur, index):
             user_id BIGINT,
             count_money BIGINT,
             your_vote BIGINT,
-            your_open_pull TEXT[],
-            your_close_pull TEXT[],
+            your_open_poll INTEGER[],
+            your_close_poll INTEGER[],
             FOREIGN KEY (user_id) REFERENCES user_info(user_id_tg)
         );'''
 
@@ -50,15 +50,15 @@ def create_table(con, cur, index):
 
 
     elif index == 5:
-        query = '''CREATE TABLE info_pull (
-            id BIGSERIAL PRIMARY KEY,
+        query = '''CREATE TABLE info_poll (
+            id_p BIGSERIAL PRIMARY KEY,
             description VARCHAR(255),
             id_user BIGINT NOT NULL,
-            vote VARCHAR(255),
+            vote BIGINT,
             variants JSONB,
             multiple_choice BOOLEAN,
             url VARCHAR(255),
-            user_accept TEXT[],
+            user_accept INTEGER[],
             max_vote BIGINT,
             topic_id BIGINT,
             status BOOLEAN,
@@ -68,7 +68,7 @@ def create_table(con, cur, index):
     elif index == 6:
         query = '''CREATE TABLE admin_vote (
             id BIGSERIAL PRIMARY KEY,
-            id_pull BIGINT,
+            id_poll BIGINT,
             user_id BIGINT,
             FOREIGN KEY (user_id) REFERENCES user_info(user_id_tg)
         );'''
@@ -95,7 +95,7 @@ def create_table(con, cur, index):
 
 def drop(con, cur):
     try:
-        for e in ['user_info', 'your_money', 'admin', 'current_topic', 'info_pull', 'admin_vote']:
+        for e in ['user_info', 'your_money', 'admin', 'current_topic', 'info_poll', 'admin_vote']:
             query = f'DROP TABLE {e}'
             cur.execute(query)
             con.commit()
@@ -104,7 +104,7 @@ def drop(con, cur):
         
 # drop(con, cur)
 # Пример вызова функции
-for i in range(7):
+for i in range(2, 7):
     create_table(con, cur, i)
 # Закрытие соединения
 cur.close()
