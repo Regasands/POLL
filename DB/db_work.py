@@ -75,11 +75,13 @@ def create_table(con, cur, index):
 
     elif index == 7:
         # не используется
-        query = '''CREATE TABLE requirements_user (
-            id BIGSERIAL PRIMARY KEY,
-            user_info BIGINT NOT NULL,
-            FOREIGN KEY (user_info) REFERENCES user_info(user_id_tg),
-        );'''
+        query = '''CREATE TABLE chanel (
+        id BIGSERIAL PRIMARY KEY,
+        url VARCHAR(255),
+        type VARCHAR(255),
+        chat_id BIGINT,
+        money BIGINT,
+        user_done INTEGER[]);'''
 
     else:
         print(f"Неверный индекс: {index}. Таблица не создана.")
@@ -104,7 +106,7 @@ def drop(con, cur):
         
 # drop(con, cur)
 # Пример вызова функции
-for i in range(2, 7):
+for i in range(7, 8):
     create_table(con, cur, i)
 # Закрытие соединения
 cur.close()

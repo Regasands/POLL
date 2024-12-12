@@ -70,6 +70,14 @@ class AdminWork(DbConnParent):
             await self.con.execute(query, text)
         except Exception as e:
             return e
+        
+    async def add_chanel(self, dicters):
+        query = '''INSERt INTO CHANEL (url, type, chat_id, money, user_done) VALUES($1, $2, $3, $4, ARRAY[]::INTEGER[])'''
+        await self.con.execute(query, dicters['url'], dicters['type'], dicters['chat_id'], dicters['money'])
+    
+    async def delete_chanel(self, url):
+        query = ''''DELETR FROM CHANEL WHERE url = $1'''
+        await self.con.execute(query, url)
 
 
 class ConnectUserToBD(DbConnParent):
@@ -140,8 +148,12 @@ class ConnectUserToBD(DbConnParent):
         query = '''SELECT * FROM info_poll WHERE id_user = $1'''
         res = await self.con.fetch(query, self.id_user)
         return res
-        
 
+    async def get_chanels(self) -> list:
+        query = '''SELECT * FROM chanel WHERE NOT ($1 =  ANY(chanel.user_done))'''
+        res = await self.con.fetch(query, self.id_user)
+        res = res[:9] if len(res) > 9 else res
+        return res
 # class DbcreatePull(DbConnParent):
 #     def __init__(self, **dicter): 
 #         self.dicter = dicter

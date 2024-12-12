@@ -2,7 +2,8 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, PollAnswer
-from aiogram.filters import Command
+from aiogram.enums import ChatMemberStatus
+from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
@@ -14,7 +15,7 @@ from CONFIG.formating import *
 
 from CONFIG.confident import API_TOKEN, CHAT_ID
 
-
+from CallBackQueryCommand import command, callback
 bot = Bot(token=API_TOKEN)
 
 dp = Dispatcher()
@@ -26,36 +27,47 @@ class Form(StatesGroup):
     create_poll_step_2 = State()
     create_poll_step_3 = State()
 
+    create_bonus = State()
+    delete_bonus = State()
+    
+
 
 @dp.message(Command('start'))
 async def get_info(message: Message, state: FSMContext):
-    async with ConnectUserToBD(message.from_user.id) as obj_bd_user:
-        if not await obj_bd_user.check_user():
-            await message.answer('Поздравляю, это твой первый раз в нашем боте!')
-            user_create = DbCreateUser(message.from_user.id, message.from_user.language_code)
-            await user_create()
-            await user_create.a()
-            await user_create.close()
-        keyboard = CallBackMarkup(DataCallBack.GLOBAL_DCITER, 3)
-        await state.update_data(con_user=obj_bd_user)
-        await message.answer('Привет, я хочу помочь тебе выбери действие', reply_markup = await keyboard.get_markup())
+    await command.start(message, state)
 
 
 @dp.message(Command('admin'))
-async def open_admin_f(message: Message):
-    async with AdminWork(message.from_user.id) as admin:
-        if await admin.check_admin():     
-            keyboard = CallBackMarkup(DataCallBack.ADMIN_FUNC, 1)
-            await message.answer("Привет господин админ, выбери действие", reply_markup = await keyboard.get_markup())
-        else:
-            await message.answer(f'{message.from_user.id}')
-        # Обработка callback запроса
+async def open_admin_f(message: Message, state: FSMContext):
+    await command.admin(message, state)
+
 
 @dp.message(Command('get_data'))
 async def get_data_state(message: Message, state: FSMContext):
-    data = await state.get_data()
-    await message.answer(data)
-    await message.answer(f'{await state.get_data()}')
+    await command.get_data_state(message, state)
+
+
+@dp.message(Command('news'))
+async def get_newss(message: Message, state: FSMContext):
+    await command.news(message, state)
+
+
+@dp.message(Command('help'))
+async def get_info_help(message: Message, state: FSMContext):
+    await command.help(message, state)
+
+@dp.message(Command('tasks'))
+async def get_tasks_help(message: Message, state: FSMContext):
+    await command.tasks(message, state)
+# @dp.message(Command('help'))
+# async def get_info_help(message: Message, state: FSMContext):
+#     await command.help(message, state)
+
+
+
+# @dp.message(Command('help'))
+# async def get_info_help(message: Message, state: FSMContext):
+#     await command.help(message, state)
 
 @dp.callback_query()
 async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> None:
@@ -105,16 +117,7 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
             await callback_query.message.answer('Ты верунлся в основное меню',  reply_markup = await keyboard.get_markup())
 
         elif callback_query.data == "1":
-            res = await res_0.get_param_user()
-            info, data = res
-            await callback_query.message.delete()
-            await callback_query.answer()
-            await callback_query.message.answer(f'''-------\U0001F4CA Ваши текущие данные\U0001F4CA--------
-                \n  \U0001F4B0 Сумма монет: {data['count_money']} \U0001F4B0
-                \n  \U0001F5F3 Ваши голоса: {data['your_vote']} \U0001F5F3
-                \n  \U0001F4CB Открытые вами опросы: {data['your_open_poll']} \U0001F4CB
-                \n  \U00002705 Закрытые вами опросы: {data['your_close_poll']} \U00002705
-                \n  \U0001F4C5 Дата регистрации: {info['date_register']} \U0001F4C5''')
+            await callback.check_profile(callback_query, state, res_0)
 
         elif callback_query.data == "1.1":
             res = {e: f'topic_{e}'  for e in (map(lambda x: x['topic_name'], await res_0.get_theam()))}
@@ -138,6 +141,7 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
             await callback_query.message.delete()
             await state.clear()
             await state.update_data(con_user=res_0)
+
         elif callback_query.data == '1.2.No':
             await state.clear()
             await state.update_data(con_user=res_0)
@@ -155,11 +159,16 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
             await state.set_state(Form.create_poll)
 
         elif callback_query.data == 'admin.1':
-            await callback_query.answer()
-            await callback_query.message.answer('Ок, введи название темы')
-            await state.set_state(Form.create_theam)
+            await callback.admin_1(callback_query, state, Form)
+
+        elif callback_query.data == 'admin.2':
+            await callback.admin_2(callback_query, state, Form)
+
+        elif callback_query.data == 'admin.3':
+            await callback.admin_3(callback_query, state, Form)
 
         elif  callback_query.data == 'check_your_poll':
+
             res = await res_0.get_your_polls()
             if not res:
                 await callback_query.data('У тебя еще нет запросов, создай их!')
@@ -170,25 +179,53 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
             await callback_query.message.answer('Список твоих запросов, выбери нужный', reply_markup = await keyboard.get_markup())
             await callback_query.answer()
             await state.update_data(index_your_poll=dicters_p)
+
         elif callback_query.data[:4] == 'id_p':
+
             record = data.get('index_your_poll')
             id_p = callback_query.data[4:]
             if not record:
                 await callback_query.message.answer('Проиозшла ошибка, попробуй заново')
                 return None
+            record = record[id_p]
+            options = await format_json_f(record['variants'])
+            if record['url']:
+                keyboard = CallBackMarkup({'URL': record['url']}, row=1, additional_data='url')
+                message_poll = await callback_query.message.answer_poll(question=record['description'],
+                                    options=list(options.keys()),
+                                    allows_multiple_answers=record['multiple_choice'],
+                                    is_anonymous=True, reply_markup=await keyboard.get_markup())
+            else:
+                message_poll = await callback_query.message.answer_poll(question=record['description'],
+                                    options=list(options.keys()),
+                                    allows_multiple_answers=record['multiple_choice'],
+                                    is_anonymous=True)
 
-
-            options = await format_json_f(record[id_p]['variants'])
-            await callback_query.message.answer('Пример твоего опроса:')
-            message_poll = await callback_query.message.answer_poll(question=record[id_p]['description'],
-                                options=list(options.keys()),
-                                allows_multiple_answers=record[id_p]['multiple_choice'],
-                                is_anonymous=True)
-            await callback_query.message.answer(await format_for_str(options))
+            await callback_query.message.answer(await format_for_str(options, record['vote'], record['max_vote']))
+            await callback_query.answer()
             
         else:
             await callback_query.message.answer("Кажется, что произошел сбой, попробуйте /start")
+            
 
+@dp.message(Form.create_bonus)
+async def create_bonus(message: Message, state: FSMContext) -> None:
+    text = message.text
+    async with AdminWork(message.from_user.id) as admin:
+        sp_bonus = text.split('@@@')
+        dicters = {'url': sp_bonus[0], 'type': sp_bonus[1], 'chat_id': int(sp_bonus[2]), 'money': int(sp_bonus[3])}
+        await admin.add_chanel(dicters)
+        await message.answer('Бонус добавлен')
+        await state.clear()
+
+
+@dp.message(Form.delete_bonus)
+async def delete_bomus(message: Message, state: FSMContext) -> None:
+    text = message.text
+    async with  AdminWork(message.from_user.id) as admin:
+        await admin.delete_chanel(text)
+        await message.answer('Бонус удален')
+        await state.clear()
 
 @dp.message(Form.create_theam)
 async def process_name(message: Message, state: FSMContext) -> None:
@@ -200,7 +237,7 @@ async def process_name(message: Message, state: FSMContext) -> None:
                 await message.answer(f"Тема добавлена успешна")
             else:
                 await message.answer(f"ошибка {state_a}")
-
+            await state.clear()
 
 @dp.message(Form.create_poll)
 async def step_1_create_poll(message: Message, state: FSMContext) -> None:
@@ -287,6 +324,12 @@ async def handle_poll_answer(poll_answer: PollAnswer, state: FSMContext):
 
 
 async def main():
+    dp.message.register(create_bonus, StateFilter(Form.create_bonus))
+    dp.message.register(delete_bomus, StateFilter(Form.delete_bonus))
+    dp.message.register(process_name, StateFilter(Form.create_theam))
+    dp.message.register(step_1_create_poll, StateFilter(Form.create_poll))
+    dp.message.register(step_3_create_poll, StateFilter(Form.create_poll_step_3))
+    dp.message.register(step_2_create_poll, StateFilter(Form.create_poll_step_2))
     await dp.start_polling(bot, allowed_updates=["message", "callback_query", "poll_answer"])
 
 
