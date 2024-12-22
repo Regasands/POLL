@@ -59,6 +59,12 @@ async def get_info_help(message: Message, state: FSMContext):
 @dp.message(Command('tasks'))
 async def get_tasks_help(message: Message, state: FSMContext):
     await command.tasks(message, state)
+
+
+@dp.message(Command('cooperation'))
+async def  get_contact_coop(message: Message):
+    await command.cooperation(message)
+    
 # @dp.message(Command('help'))
 # async def get_info_help(message: Message, state: FSMContext):
 #     await command.help(message, state)
@@ -74,8 +80,8 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
     data = await state.get_data()
     Con = data.get('con_user')
     if not Con:
-        await callback_query.message.answer("Кажется, что произошел сбой, попробуйте /start")
-        return
+        Con = ConnectUserToBD(callback_query.message.from_user.id)
+        await state.update_data(con_user=Con)
     async with Con as res_0:
         if callback_query.data[:6] == 'topic_':
             m_p = data.get('poll')
@@ -88,6 +94,8 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
                 pass
 
             res = await res_0.get_poll(theam, additional_param=s)
+            if not s:
+                s = []
             await state.update_data(consumable_poll= s + [res['id_p']]) if res else await state.update_data(consumable_poll=[])
 
             if not res:
@@ -108,9 +116,10 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
             await state.update_data(theam_find=theam)
 
             await callback_query.answer()
-
+             
         elif callback_query.data == 'end_poll':
             await callback_query.answer()
+            await callback_query.message.delete()
             keyboard = CallBackMarkup(DataCallBack.GLOBAL_DCITER, 3)
             await state.clear()
             await state.update_data(con_user=res_0)
@@ -121,7 +130,7 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
 
         elif callback_query.data == "1.1":
             res = {e: f'topic_{e}'  for e in (map(lambda x: x['topic_name'], await res_0.get_theam()))}
-            print(res)
+            res['Вернуться'] = 'end_poll'
             keyboard = CallBackMarkup(res, 3)
             await callback_query.message.delete()
             await callback_query.answer()
@@ -171,7 +180,7 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
 
             res = await res_0.get_your_polls()
             if not res:
-                await callback_query.data('У тебя еще нет запросов, создай их!')
+                await callback_query.message.answer('У тебя еще нет запросов, создай их!')
                 return
             dicter = {f"{record['description'][:7]}..." if len(record['description']) > 7 else f"{record['description'][:7]}": f"id_p{record['id_p']}" for record in res}
             dicters_p = {f"{record['id_p']}": record for record in res}
@@ -204,9 +213,13 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
             await callback_query.message.answer(await format_for_str(options, record['vote'], record['max_vote']))
             await callback_query.answer()
             
+        elif callback_query.data == 'check_bonus':
+            await callback.check_bonus(callback_query, state, bot, res_0)
+
         else:
             await callback_query.message.answer("Кажется, что произошел сбой, попробуйте /start")
-            
+        await callback_query.answer()
+        
 
 @dp.message(Form.create_bonus)
 async def create_bonus(message: Message, state: FSMContext) -> None:
@@ -256,7 +269,8 @@ async def step_1_create_poll(message: Message, state: FSMContext) -> None:
             await message.reply('Отлично, теперь выбери тему к которой это относиться, если нет подходящей пиши @Regqwe',  reply_markup = await keyboard.get_markup())
             await state.update_data(data_poll=dicter)
         else:
-            await message.answer('Это не опрос, попробуй заново')
+            keyboard = CallBackMarkup({'Закончить': 'end_poll'}, row=1)
+            await message.answer('Это не опрос, попробуй заново', reply_markup= await keyboard.get_markup())
 
 
 @dp.message(Form.create_poll_step_3)
@@ -319,10 +333,9 @@ async def handle_poll_answer(poll_answer: PollAnswer, state: FSMContext):
         await bot.stop_poll(chat_id=poll[0].chat.id, message_id=poll[0].message_id, reply_markup=poll[0].reply_markup)
         opt_d_1 = {i: i2 for i, i2 in enumerate(list(poll[1].keys()))}
         for option_id in  poll_answer.option_ids:
+            print(poll[1][opt_d_1[option_id]])
             poll[1][opt_d_1[option_id]] += 1
         await con.update_tables(await format_json(poll[1]), poll[2])
-
-
 async def main():
     dp.message.register(create_bonus, StateFilter(Form.create_bonus))
     dp.message.register(delete_bomus, StateFilter(Form.delete_bonus))

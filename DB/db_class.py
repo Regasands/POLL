@@ -43,7 +43,7 @@ class DbCreateUser(DbConnParent):
         await self.con.execute(query, self.id_user, self.lang, datetime.datetime.now())
 
     async def create_money(self):
-        query = '''INSERT INTO your_money (user_id, count_money, your_vote, your_open_poll, your_close_poll) VALUES($1, 0, 0, ARRAY[]::INTEGER[], ARRAY[]::INTEGER[])'''
+        query = '''INSERT INTO your_money (user_id, count_money, your_vote, your_open_poll, your_close_poll) VALUES($1, 0, 0, ARRAY[]::BIGINT[], ARRAY[]::BIGINT[])'''
         await self.con.execute(query, self.id_user)
 
     async def a(self):
@@ -72,11 +72,11 @@ class AdminWork(DbConnParent):
             return e
         
     async def add_chanel(self, dicters):
-        query = '''INSERt INTO CHANEL (url, type, chat_id, money, user_done) VALUES($1, $2, $3, $4, ARRAY[]::INTEGER[])'''
+        query = '''INSERT INTO CHANEL (url, type, chat_id, money, user_done) VALUES($1, $2, $3, $4, ARRAY[]::BIGINT[])'''
         await self.con.execute(query, dicters['url'], dicters['type'], dicters['chat_id'], dicters['money'])
     
     async def delete_chanel(self, url):
-        query = ''''DELETR FROM CHANEL WHERE url = $1'''
+        query = '''DELETE FROM CHANEL WHERE url = $1'''
         await self.con.execute(query, url)
 
 
@@ -137,7 +137,7 @@ class ConnectUserToBD(DbConnParent):
 
     async def update_tables(self, variants, reconds) -> None:
         if reconds['max_vote'] < reconds['vote'] + 1:
-            await self.con.execute('''UPDATE info_poll SET status = False WHERE id = $1''', reconds['id_p'])
+            await self.con.execute('''UPDATE info_poll SET status = False WHERE id_p = $1''', reconds['id_p'])
         else:
             await self.con.execute('''UPDATE info_poll SET variants = $1, vote = vote + 1 WHERE id_p = $2''', variants, reconds['id_p'])
         await self.con.execute('''UPDATE info_poll SET user_accept = array_append(user_accept, $1) WHERE id_p = $2''', self.id_user, reconds['id_p']), 
@@ -154,6 +154,23 @@ class ConnectUserToBD(DbConnParent):
         res = await self.con.fetch(query, self.id_user)
         res = res[:9] if len(res) > 9 else res
         return res
+
+    async def check_chanel(self, id_c):
+        res = await self.con.fetchrow('''SELECT * FROM chanel WHERE id = $1 and  NOT($2 = ANY(chanel.user_done))''', id_c, self.id_user)
+        print(res)
+        if res:
+            return True
+        return False
+
+    async def update_param(self, id_c: int):
+        query = '''UPDATE chanel SET user_done = array_append(user_done, $1) WHERE id = $2'''
+        await self.con.execute(query, self.id_user, id_c)
+
+    async def add_money(self, count: int):
+        query = '''UPDATE your_money SET count_money = count_money + $1 WHERE user_id = $2'''
+        await self.con.execute(query, count, self.id_user)
+
+
 # class DbcreatePull(DbConnParent):
 #     def __init__(self, **dicter): 
 #         self.dicter = dicter

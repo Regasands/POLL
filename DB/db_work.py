@@ -32,8 +32,8 @@ def create_table(con, cur, index):
             user_id BIGINT,
             count_money BIGINT,
             your_vote BIGINT,
-            your_open_poll INTEGER[],
-            your_close_poll INTEGER[],
+            your_open_poll BIGINT[],
+            your_close_poll BIGINT[],
             FOREIGN KEY (user_id) REFERENCES user_info(user_id_tg)
         );'''
 
@@ -58,7 +58,7 @@ def create_table(con, cur, index):
             variants JSONB,
             multiple_choice BOOLEAN,
             url VARCHAR(255),
-            user_accept INTEGER[],
+            user_accept BIGINT[],
             max_vote BIGINT,
             topic_id BIGINT,
             status BOOLEAN,

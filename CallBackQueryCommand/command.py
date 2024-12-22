@@ -64,3 +64,8 @@ async def tasks(message: Message, state: FSMContext):
         await message.answer('Отлично подпишись на каналы и получи бонусы', reply_markup= await keyboard.get_markup())
         await state.update_data(bonus=res)
         
+
+async def cooperation(message: Message):
+    await message.answer('Пишите @regqwe')
+
+
