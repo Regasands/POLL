@@ -58,7 +58,7 @@ async def tasks(message: Message, state: FSMContext):
         if not res:
             await message.answer('Пока нет заданий, возвращайтесь позже')
             return
-        dicters_p = {f'Получить {e['money']} монет': e['url'] for e in res}
+        dicters_p = {f'Получить {e["money"]} монет': e["url"] for e in res}
         keyboard = CallBackMarkup(dicters_p, row=3, additional_data='url')
         await keyboard.other_param_add('check_bonus', 'Проверить')
         await message.answer('Отлично подпишись на каналы и получи бонусы', reply_markup= await keyboard.get_markup())

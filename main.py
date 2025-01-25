@@ -216,6 +216,9 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
         elif callback_query.data == 'check_bonus':
             await callback.check_bonus(callback_query, state, bot, res_0)
 
+        elif callback_query.data == 'helpp.1':
+            await callback.get_info(callback_query)
+            pass
         else:
             await callback_query.message.answer("Кажется, что произошел сбой, попробуйте /start")
         await callback_query.answer()

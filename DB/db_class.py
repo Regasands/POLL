@@ -56,7 +56,7 @@ class DbCreateUser(DbConnParent):
 
 class AdminWork(DbConnParent):
     '''Тех класс, для быстрой работой с бд'''
-    def __init__(self, id_user):
+    def __init__(self, id_user):    
         super().__init__(id_user)
 
 

@@ -21,9 +21,9 @@ async def admin_1(callback_query: CallbackQuery, state: FSMContext, Form):
     await state.set_state(Form.create_theam)
 
 
-async def admin_2(callback_query: CallbackQuery, state: FSMContext, Form):
-    await callback_query.answer()
-    await callback_query.message.answer('Отлично, отправь задания в словря  с ключами (url, type, chat_id, money)')
+    async def admin_2(callback_query: CallbackQuery, state: FSMContext, Form):
+        await callback_query.answer()
+        await callback_query.message.answer('Отлично, отправь задания в словря  с ключами (url, type, chat_id, money)')
     await state.set_state(Form.create_bonus)
 
 
@@ -54,7 +54,7 @@ async def check_bonus(callback_query: CallbackQuery, state: FSMContext, bot, res
     check_sub = True
     for elem in data.get('bonus'):
         try:
-            member = await bot.get_chat_member(chat_id=elem['chat_id'], user_id=res_0.id_user)
+            member = await bot.get_chat_member(chat_id=elem["chat_id"], user_id=res_0.id_user)
             if not member.status in {ChatMemberStatus.MEMBER, ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR} or not await res_0.check_chanel(elem['id']):
                 check_sub = False
                 print('really&')
@@ -72,3 +72,6 @@ async def check_bonus(callback_query: CallbackQuery, state: FSMContext, bot, res
         await callback_query.message.answer('Пожалуйста, подпишитесь на все каналы!')
 
 
+
+async def get_info(callback_query: CallbackQuery):
+    pass
