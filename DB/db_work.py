@@ -1,19 +1,27 @@
 import psycopg2
 from CONFIG.config import DbCondig
 
-try:
-    # Подключение к базе данных
-    con = psycopg2.connect(
-        dbname=DbCondig.DBNAME,
-        user=DbCondig.USER,
-        password=DbCondig.PASSWORD,
-        host=DbCondig.HOST,
-        port=DbCondig.PORT
-    )
-    cur = con.cursor()
-except Exception as e:
-    print("Ошибка подключения к базе данных:", e)
+TABLES = [
+    'admin_vote',
+    'info_poll',
+    'your_money',
+    'current_topic',
+    'admin',
+    'user_info'
+]
 
+def get_connection():
+    try:
+        return psycopg2.connect(
+            dbname=DbCondig.DBNAME,
+            user=DbCondig.USER,
+            password=DbCondig.PASSWORD,
+            host=DbCondig.HOST,
+            port=DbCondig.PORT
+        )
+    except Exception as e:
+        print("Ошибка подключения к базе данных:", e)
+        return None
 
 def create_table(con, cur, index):
     query = None
@@ -97,17 +105,22 @@ def create_table(con, cur, index):
 
 def drop(con, cur):
     try:
-        for e in ['user_info', 'your_money', 'admin', 'current_topic', 'info_poll', 'admin_vote']:
-            query = f'DROP TABLE {e}'
+        # Удаление таблиц в правильном порядке (из-за внешних ключей)
+        for table in TABLES:
+            query = f'DROP TABLE IF EXISTS {table} CASCADE'
             cur.execute(query)
-            con.commit()
+        con.commit()
     except Exception as e:
-        print(e)
-        
-# drop(con, cur)
-# Пример вызова функции
-for i in range(7, 8):
-    create_table(con, cur, i)
-# Закрытие соединения
-cur.close()
-con.close()
+        print(f"Ошибка при удалении таблиц: {e}")
+
+def main():
+    with get_connection() as con:
+        with con.cursor() as cur:
+            # drop(con, cur)
+            for i in range(1, 7):  # создаем только нужные таблицы
+                create_table(con, cur, i)
+            cur.execute('''INSERT INTO admin (user_id) VALUES(%s)''', (1384189946,))
+            con.commit()
+
+if __name__ == "__main__":
+    main()

@@ -2,6 +2,7 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, PollAnswer, InputFile
+from aiogram.types.input_file import FSInputFile  # Добавляем этот импорт
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -76,9 +77,15 @@ async def check_bonus(callback_query: CallbackQuery, state: FSMContext, bot, res
 async def get_info(callback_query: CallbackQuery):
     await callback_query.answer()
     await callback_query.message.delete()
-    keyboard = CallBackMarkup(DataCallBack.GLOBAL_DCITER, 3)
+    keyboard = CallBackMarkup(DataCallBack.GLOBAL_DCITER, 3)  
     await callback_query.message.answer('Отлично, когда отправляешь  опрос, используй такой формат') 
-    await callback_query.message.answer_photo(photo='img/step_1.png', caption='Первый шаг')
-    await callback_query.message.answer_photo(photo='img/step_2.png', caption='Второй шаг')
+    await callback_query.message.answer_photo(
+        photo=FSInputFile("img/step_1.png"), 
+        caption='Первый шаг'
+    )
+    await callback_query.message.answer_photo(
+        photo=FSInputFile("img/step_2.png"), 
+        caption='Второй шаг'
+    )
     await callback_query.answer('Будут вопросы - обращайся, @regqwe', reply_markup = await keyboard.get_markup() )
 
