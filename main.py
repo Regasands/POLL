@@ -1,4 +1,4 @@
-import asyncio
+import asyncio, logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, PollAnswer
@@ -224,27 +224,9 @@ async def handle_callback(callback_query: CallbackQuery, state: FSMContext) -> N
         await callback_query.answer()
         
 
-@dp.message(Form.create_bonus)
-async def create_bonus(message: Message, state: FSMContext) -> None:
-    text = message.text
-    async with AdminWork(message.from_user.id) as admin:
-        sp_bonus = text.split('@@@')
-        dicters = {'url': sp_bonus[0], 'type': sp_bonus[1], 'chat_id': int(sp_bonus[2]), 'money': int(sp_bonus[3])}
-        await admin.add_chanel(dicters)
-        await message.answer('Бонус добавлен')
-        await state.clear()
-
-
-@dp.message(Form.delete_bonus)
-async def delete_bomus(message: Message, state: FSMContext) -> None:
-    text = message.text
-    async with  AdminWork(message.from_user.id) as admin:
-        await admin.delete_chanel(text)
-        await message.answer('Бонус удален')
-        await state.clear()
-
 @dp.message(Form.create_theam)
-async def process_name(message: Message, state: FSMContext) -> None:
+async def create_theam(message: Message, state: FSMContext) -> None:
+    logging.info('secs')
     await state.update_data(text=message.text)
     async with  AdminWork(message.from_user.id) as admin:
         if await admin.check_admin():
@@ -254,6 +236,23 @@ async def process_name(message: Message, state: FSMContext) -> None:
             else:
                 await message.answer(f"ошибка {state_a}")
             await state.clear()
+
+@dp.message(Form.create_bonus)
+async def create_bonus(message: Message, state: FSMContext) -> None:
+    logging.info('secs')
+    await state.update_data(text=message.text)
+    async with  AdminWork(message.from_user.id) as admin:
+        if await admin.check_admin():
+            state_a = await admin.add_topic(message.text)
+            if not state_a:
+                await message.answer(f"Тема добавлена успешна")
+            else:
+                await message.answer(f"ошибка {state_a}")
+            await state.clear()
+@dp.message(Form.delete_bonus)
+async def delete_bomus(message: Message, state: FSMContext) -> None:
+    logging.error('why2')
+
 
 @dp.message(Form.create_poll)
 async def step_1_create_poll(message: Message, state: FSMContext) -> None:
@@ -339,15 +338,27 @@ async def handle_poll_answer(poll_answer: PollAnswer, state: FSMContext):
             print(poll[1][opt_d_1[option_id]])
             poll[1][opt_d_1[option_id]] += 1
         await con.update_tables(await format_json(poll[1]), poll[2])
+
+        
 async def main():
     dp.message.register(create_bonus, StateFilter(Form.create_bonus))
     dp.message.register(delete_bomus, StateFilter(Form.delete_bonus))
-    dp.message.register(process_name, StateFilter(Form.create_theam))
+    dp.message.register(create_theam, StateFilter(Form.create_theam))
     dp.message.register(step_1_create_poll, StateFilter(Form.create_poll))
     dp.message.register(step_3_create_poll, StateFilter(Form.create_poll_step_3))
     dp.message.register(step_2_create_poll, StateFilter(Form.create_poll_step_2))
     await dp.start_polling(bot, allowed_updates=["message", "callback_query", "poll_answer"])
 
 
+
 if __name__ == '__main__':
+    logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s]  %(lineno)d %(message)s",
+    handlers=[
+        logging.FileHandler("app.log", encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+    )
+    logging.info("Приложение запущено")
     asyncio.run(main()) 

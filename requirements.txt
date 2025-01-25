@@ -1,0 +1,3 @@
+psycopg
+aiogram
+asyncpg
